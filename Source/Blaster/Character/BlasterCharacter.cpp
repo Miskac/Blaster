@@ -6,6 +6,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Blaster/Weapon/Weapon.h"
+#include "Blaster/BlasterComponents/CombatComponent.h"
 
 // Sets default values
 ABlasterCharacter::ABlasterCharacter()
@@ -28,6 +31,18 @@ ABlasterCharacter::ABlasterCharacter()
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Overhead Widget"));
 	OverheadWidget->SetupAttachment(RootComponent);
 
+	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
+	Combat->SetIsReplicated(true);
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+
+}
+
+void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 }
 
 // Called when the game starts or when spawned
@@ -41,7 +56,6 @@ void ABlasterCharacter::BeginPlay()
 void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -55,7 +69,21 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ABlasterCharacter::LookUp);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-}	
+
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ABlasterCharacter::EquipButtonPressed);
+
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ABlasterCharacter::CrouchButtonPressed);
+}
+
+ void ABlasterCharacter::PostInitializeComponents()
+ {
+	Super::PostInitializeComponents();
+
+	if (Combat)
+	{
+		Combat->Character = this;
+	}
+ }
 
 void ABlasterCharacter::MoveForward(float Value)
 {
@@ -85,4 +113,73 @@ void ABlasterCharacter::Turn(float Value)
 void ABlasterCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void ABlasterCharacter::EquipButtonPressed()
+{
+	if (Combat)
+	{
+		if (HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void ABlasterCharacter::CrouchButtonPressed()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
+	}
+}
+
+void ABlasterCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void ABlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+	if (LastWeapon)
+	{
+		LastWeapon->ShowPickupWidget(false);
+	}
+}
+
+void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+
+	OverlappingWeapon = Weapon;
+	if (IsLocallyControlled())
+	{
+		if (OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
+}
+
+bool ABlasterCharacter::IsWeaponEquipped()
+{
+	return (Combat && Combat->EquippedWeapon);
 }
