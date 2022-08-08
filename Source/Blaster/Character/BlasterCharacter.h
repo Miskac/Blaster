@@ -48,6 +48,8 @@ protected:
 
 	void AimOffset(float DeltaTime);
 
+	virtual void Jump() override;
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -72,9 +74,8 @@ private:
 	void ServerEquipButtonPressed();
 
 	float AO_Yaw;
-
+	float InterpAO_Yaw;
 	float AO_Pitch;
-
 	FRotator StartingAimRotation;
 
 	ETurningInPlace TurningInPlace;
