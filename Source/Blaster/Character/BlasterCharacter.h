@@ -27,6 +27,8 @@ public:
 
 	virtual void PostInitializeComponents() override;
 
+	void PlayFireMontage(bool bAiming);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -49,6 +51,9 @@ protected:
 	void AimOffset(float DeltaTime);
 
 	virtual void Jump() override;
+
+	void FireButtonPressed();
+	void FireButtonReleased();
 
 private:
 
@@ -81,6 +86,9 @@ private:
 	ETurningInPlace TurningInPlace;
 
 	void TurnInPlace(float DeltaTime);
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* FireWeaponMontage;
 
 public:	
 
