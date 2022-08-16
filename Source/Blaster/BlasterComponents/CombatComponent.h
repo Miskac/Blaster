@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Blaster/HUD/BlasterHUD.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LEINGHT 80000.f
@@ -73,10 +74,13 @@ private:
 
 	// HUD and Crosshairs
 	float CrosshairVelocityFactor;
-
 	float CrosshairInAirfactor;
+	float CrosshairAimFactor;
+	float CrosshairShootingFactor;
 
 	FVector HitTarget;
+
+	FHUDPackage HUDPackage;
 
 	// Aiming and FOV
 	// Field of view when not aiming; set to the cameras base FOV in BeginPlay
